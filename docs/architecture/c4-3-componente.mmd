@@ -1,0 +1,50 @@
+---
+title: "C4 Nível 3 — Componentes: Order Service"
+config:
+  layout: elk
+---
+flowchart TB
+  gw["API Gateway"]:::ext
+  kafka{{"Apache Kafka"}}:::bus
+
+  subgraph ORD["Order Service (NestJS) — Componentes"]
+    ctrl["API Controller<br/>checkout, cancel, history"]:::comp
+    cmd["Command Handler<br/>CreateOrder · CancelOrder<br/>ConfirmOrder"]:::comp
+    saga["Saga Orchestrator<br/>Checkout flow<br/>Timeout: 120s"]:::comp
+    pub["Event Publisher<br/>Grava no Outbox<br/>na mesma transação"]:::comp
+    outbox["Outbox Processor<br/>Polling 100ms<br/>Batch de 50"]:::comp
+    cons["Event Consumer<br/>payment.confirmed<br/>payment.failed<br/>inventory.reserved"]:::comp
+    qry["Query Handler<br/>GetOrderHistory<br/>GetOrderById"]:::comp
+    proj["Read Projector<br/>Kafka → MongoDB"]:::comp
+  end
+
+  pg[("PostgreSQL<br/>orders + outbox")]:::db
+  mongo[("MongoDB<br/>order_views")]:::db
+
+  gw -->|"HTTPS/REST"| ctrl
+  ctrl -->|"comandos"| cmd
+  ctrl -->|"consultas"| qry
+  cmd -->|"inicia saga"| saga
+  cmd -->|"registra evento"| pub
+  saga -->|"registra evento"| pub
+  pub -->|"grava (mesma transação)"| pg
+  outbox -->|"lê eventos pendentes"| pg
+  outbox -->|"publica"| kafka
+  kafka -->|"consome"| cons
+  cons -->|"avança / compensa"| cmd
+  kafka -->|"consome"| proj
+  proj -->|"atualiza views"| mongo
+  qry -->|"lê"| mongo
+
+  subgraph LEG["Legenda"]
+    direction TB
+    l1["Componente"]:::comp
+    l2[("Banco de dados")]:::db
+    l3{{"Event Bus"}}:::bus
+    l4["Sistema/container externo"]:::ext
+  end
+
+  classDef comp fill:#85bbf0,stroke:#5b9bd5,color:#1b1b1b
+  classDef db fill:#c9e2f7,stroke:#5b9bd5,color:#1b1b1b
+  classDef bus fill:#f4a261,stroke:#b8752f,color:#1b1b1b
+  classDef ext fill:#999999,stroke:#6b6b6b,color:#fff

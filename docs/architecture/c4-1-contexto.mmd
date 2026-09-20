@@ -1,0 +1,29 @@
+---
+title: "C4 Nível 1 — Contexto do Sistema: FIAP Store"
+---
+flowchart TB
+  cust["👤 Customer<br/>Estudante, ex-aluno<br/>ou cliente externo"]:::person
+  adm["👤 Administrator<br/>Funcionário FIAP"]:::person
+  store["🛒 FIAP Store<br/>Plataforma e-commerce<br/>em microsserviços"]:::system
+  portal["FIAP Portal<br/>SSO acadêmico<br/>SAML/OIDC"]:::ext
+  pay["Payment Gateway<br/>Processador PCI-DSS<br/>Cartão, PIX, Boleto"]:::ext
+  mail["Email Provider<br/>SES / SendGrid"]:::ext
+  push["Push Provider<br/>Firebase / OneSignal"]:::ext
+
+  cust -->|"HTTPS<br/>Navega, compra,<br/>acompanha pedidos"| store
+  adm -->|"HTTPS<br/>Gerencia produtos,<br/>estoque e pedidos"| store
+  store -->|"SAML/OIDC<br/>Autentica estudantes"| portal
+  store -->|"HTTPS/REST<br/>Processa pagamentos"| pay
+  store -->|"SMTP/API<br/>Envia emails"| mail
+  store -->|"HTTPS/API<br/>Envia push notifications"| push
+
+  subgraph LEG["Legenda"]
+    direction LR
+    l1["Pessoa"]:::person
+    l2["Sistema (em construção)"]:::system
+    l3["Sistema externo"]:::ext
+  end
+
+  classDef person fill:#08427b,stroke:#052e56,color:#fff
+  classDef system fill:#1168bd,stroke:#0b4884,color:#fff
+  classDef ext fill:#999999,stroke:#6b6b6b,color:#fff

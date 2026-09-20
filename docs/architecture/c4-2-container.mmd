@@ -1,0 +1,95 @@
+---
+title: "C4 Nível 2 — Containers: FIAP Store"
+config:
+  layout: elk
+---
+flowchart LR
+  subgraph CLI["Clientes"]
+    web["Web App<br/>React/Next.js"]:::person
+    adm["Admin Panel<br/>React"]:::person
+  end
+
+  gw["API Gateway<br/>Kong/Express<br/>JWT + Rate Limit<br/>+ Correlation ID"]:::gate
+
+  subgraph MS["Microsserviços"]
+    auth["Auth Service<br/>NestJS"]:::svc
+    cat["Catalog Service<br/>NestJS · CQRS"]:::svc
+    cart["Cart Service<br/>NestJS"]:::svc
+    ord["Order Service<br/>NestJS · CQRS + Saga"]:::svc
+    pay["Payment Service<br/>NestJS"]:::svc
+    inv["Inventory Service<br/>NestJS"]:::svc
+    notif["Notification Service<br/>NestJS"]:::svc
+    reco["Recommendation<br/>FastAPI"]:::svc
+  end
+
+  subgraph DB["Bancos de Dados"]
+    dbauth[("PostgreSQL<br/>Auth")]:::db
+    dbcatw[("PostgreSQL<br/>Catalog Write")]:::db
+    dbcatr[("Elasticsearch<br/>Catalog Read")]:::db
+    dbcart[("Redis<br/>Cart")]:::db
+    dbordw[("PostgreSQL<br/>Order Write + Outbox")]:::db
+    dbordr[("MongoDB<br/>Order Read")]:::db
+    dbpay[("PostgreSQL<br/>Payment")]:::db
+    dbinv[("PostgreSQL<br/>Inventory")]:::db
+    dbnot[("MongoDB<br/>Notification")]:::db
+    dbreco[("Neo4j<br/>Recommendation")]:::db
+  end
+
+  kafka{{"Apache Kafka<br/>Event Bus<br/>3 brokers · 5 tópicos"}}:::bus
+
+  subgraph EXT["Sistemas externos"]
+    portal["FIAP Portal<br/>SSO SAML/OIDC"]:::ext
+    pgw["Payment Gateway<br/>Cartão, PIX, Boleto"]:::ext
+    mail["Email Provider<br/>SES / SendGrid"]:::ext
+    push["Push Provider<br/>Firebase / OneSignal"]:::ext
+  end
+
+  web -->|"HTTPS"| gw
+  adm -->|"HTTPS"| gw
+  gw -->|"REST"| auth
+  gw -->|"REST"| cat
+  gw -->|"REST"| cart
+  gw -->|"REST"| ord
+  gw -->|"REST"| pay
+  gw -->|"REST"| inv
+  gw -->|"REST"| reco
+
+  auth -->|"lê/escreve"| dbauth
+  cat -->|"escreve"| dbcatw
+  cat -->|"lê (busca)"| dbcatr
+  cart -->|"lê/escreve"| dbcart
+  ord -->|"escreve"| dbordw
+  ord -->|"lê"| dbordr
+  pay -->|"lê/escreve"| dbpay
+  inv -->|"lê/escreve"| dbinv
+  notif -->|"lê/escreve"| dbnot
+  reco -->|"consulta grafo"| dbreco
+
+  cat <-->|"eventos"| kafka
+  ord <-->|"eventos"| kafka
+  pay <-->|"eventos"| kafka
+  inv <-->|"eventos"| kafka
+  auth -.->|"publica eventos"| kafka
+  kafka -.->|"consome eventos"| notif
+  reco -.->|"eventos (opcional)"| kafka
+
+  auth -->|"OIDC/SAML"| portal
+  pay -->|"HTTPS/REST"| pgw
+  notif -->|"SMTP/API"| mail
+  notif -->|"HTTPS/API"| push
+
+  subgraph LEG["Legenda"]
+    direction TB
+    l1["Cliente (front-end)"]:::person
+    l2["Container / serviço"]:::svc
+    l3[("Banco de dados")]:::db
+    l4{{"Event Bus"}}:::bus
+    l5["Sistema externo"]:::ext
+  end
+
+  classDef person fill:#08427b,stroke:#052e56,color:#fff
+  classDef gate fill:#0b6e99,stroke:#07485f,color:#fff
+  classDef svc fill:#438dd5,stroke:#2e6295,color:#fff
+  classDef db fill:#c9e2f7,stroke:#5b9bd5,color:#1b1b1b
+  classDef bus fill:#f4a261,stroke:#b8752f,color:#1b1b1b
+  classDef ext fill:#999999,stroke:#6b6b6b,color:#fff
