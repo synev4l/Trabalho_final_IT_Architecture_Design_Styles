@@ -7,7 +7,7 @@
 
 ## Vídeo de apresentação
 
-> **Link do vídeo:** https://1drv.ms/f/c/594af9b6458da609/IgChuG1v6sS-QpqK8YMOTA52ASb64OK8L5nj4cUV7joJvAA?e=qjSym4
+> **Link do vídeo:** https://1drv.ms/f/c/594af9b6458da609/IgChuG1v6sS-QpqK8YMOTA52ASb64OK8L5nj4cUV7joJvAA?e=xbA8sr
 
 Todos os integrantes apresentam uma parte do projeto (ver tabela **Equipe** no final deste documento).
 
